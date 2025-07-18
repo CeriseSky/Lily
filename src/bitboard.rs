@@ -11,6 +11,7 @@ pub trait Manipulations {
     fn play_if_exists(&mut self, src: u64, dst: u64);
     fn set_square(&mut self, file: isize, rank: isize);
     fn clear_square(&mut self, file: isize, rank: isize);
+    fn take(&mut self, attackers: u64);
 }
 
 impl Manipulations for u64 {
@@ -35,6 +36,10 @@ impl Manipulations for u64 {
     fn clear_square(&mut self, file: isize, rank: isize) {
         assert!(self.square_occupied(file, rank));
         *self &= !get_location_bit(file, rank);
+    }
+
+    fn take(&mut self, attackers: u64) {
+        *self &= !attackers;
     }
 }
 

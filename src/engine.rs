@@ -83,6 +83,15 @@ impl State {
         let mut moves: Vec::<Move> = vec![];
 
         self.get_knight_moves(&mut moves, turn);
+        // Todo:
+        // self.get_king_moves(&mut moves, turn);
+        // self.get_rook_moves(&mut moves, turn);
+        // self.get_bishop_moves(&mut moves, turn);
+        // self.get_queen_moves(&mut moves, turn);
+        // self.get_pawn_moves(&mut moves, turn);
+        //
+        // the C++ version did have partial pawn support but En Passant and
+        // promotion sound complicated to implement
 
         moves
     }
@@ -140,7 +149,7 @@ impl State {
         moves[0]
     }
 
-    pub fn play_move(&mut self, src: u64, dst: u64) {
+    pub fn play_move(&mut self, src: u64, dst: u64, turn: &Turn) {
         // "(Crying)" - Anyone reading this code
 
         self.white_pieces.play_if_exists(src, dst);
@@ -158,6 +167,27 @@ impl State {
         self.black_queens.play_if_exists(src, dst);
         self.black_pawns.play_if_exists(src, dst);
         self.black_king.play_if_exists(src, dst);
+
+        match turn {
+            Turn::White => {
+                self.black_pieces.take(self.white_pieces);
+                self.black_knights.take(self.white_pieces);
+                self.black_rooks.take(self.white_pieces);
+                self.black_bishops.take(self.white_pieces);
+                self.black_queens.take(self.white_pieces);
+                self.black_pawns.take(self.white_pieces);
+                self.black_king.take(self.white_pieces);
+            },
+            Turn::Black => {
+                self.white_pieces.take(self.black_pieces);
+                self.white_knights.take(self.black_pieces);
+                self.white_rooks.take(self.black_pieces);
+                self.white_bishops.take(self.black_pieces);
+                self.white_queens.take(self.black_pieces);
+                self.white_pawns.take(self.black_pieces);
+                self.white_king.take(self.black_pieces);
+            }
+        };
     }
 }
 

@@ -44,7 +44,7 @@ fn main() {
             "move" => {
                 assert!(tokens.len() > 1);
                 let from_gui = move_from_str(tokens[1]);
-                lily.play_move(from_gui.from, from_gui.to);
+                lily.play_move(from_gui.from, from_gui.to, &turn);
                 turn = match turn {
                     Turn::White => Turn::Black,
                     Turn::Black => Turn::White,
