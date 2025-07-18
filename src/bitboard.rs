@@ -62,6 +62,7 @@ impl Scans for u64 {
     }
 
     fn square_occupied(self, file: isize, rank: isize) -> bool {
+        if !square_exists(file, rank) { return false; }
         self & get_location_bit(file, rank) != 0
     }
 

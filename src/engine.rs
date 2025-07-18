@@ -77,9 +77,8 @@ impl State {
         self.black_king = 0x1000_0000_0000_0000;
     }
 
-    // returns (from, to) as bitboards
     pub fn get_move(&self, turn: &Turn) -> Move {
-        self.choose_move(&self.get_legal_moves(turn, true), turn,)
+        self.choose_move(&self.get_legal_moves(turn, true), turn)
     }
 
     fn get_legal_moves(&self, turn: &Turn, checks: bool) -> Vec::<Move> {
@@ -87,11 +86,14 @@ impl State {
 
         self.get_knight_moves(&mut moves, turn);
         self.get_king_moves(&mut moves, turn);
+        self.get_rook_moves(&mut moves, turn);
+        self.get_bishop_moves(&mut moves, turn);
+        self.get_queen_moves(&mut moves, turn);
+        self.get_pawn_moves(&mut moves, turn);
         // Todo:
-        // self.get_rook_moves(&mut moves, turn);
-        // self.get_bishop_moves(&mut moves, turn);
-        // self.get_queen_moves(&mut moves, turn);
-        // self.get_pawn_moves(&mut moves, turn);
+        // castling
+        // En Passant
+        // Promotion
         //
         // the C++ version did have partial pawn support but En Passant and
         // promotion sound complicated to implement
@@ -100,6 +102,57 @@ impl State {
             self.remove_checks(&mut moves, turn);
         }
         moves
+    }
+
+    fn get_pawn_moves(&self, moves: &mut Vec::<Move>, turn: &Turn) {
+        let (mut current_piece, direction, my_pieces, opposite_pieces) =
+            match turn {
+                Turn::White => (self.white_pawns,
+                                1,
+                                self.white_pieces,
+                                self.black_pieces),
+                Turn::Black => (self.black_pawns,
+                                -1,
+                                self.black_pieces,
+                                self.white_pieces),
+            };
+
+        while current_piece != 0 {
+            let file = current_piece.get_file() as isize;
+            let rank = current_piece.get_rank() as isize;
+
+            let mut current_move = Move { from: 0, to: 0 };
+            current_move.from.set_square(file, rank);
+
+            if my_pieces.valid_destination(file, rank + direction) &&
+               opposite_pieces.valid_destination(file, rank + direction) {
+                   current_move.to = 0;
+                   current_move.to.set_square(file, rank + direction);
+                   moves.push(current_move);
+
+                   let starting_rank = match turn {
+                       Turn::White => 1,
+                       Turn::Black => 6,
+                   };
+                   if rank == starting_rank &&
+                      my_pieces.valid_destination(file, rank + 2 * direction) &&
+                      opposite_pieces.valid_destination(file, rank + 2 * direction) {
+                       current_move.to = 0;
+                       current_move.to.set_square(file, rank + 2 * direction);
+                       moves.push(current_move);
+                   }
+            }
+
+            for i in [-1, 1] {
+                if opposite_pieces.square_occupied(file + i, rank + direction) {
+                    current_move.to = 0;
+                    current_move.to.set_square(file + i, rank + direction);
+                    moves.push(current_move);
+                }
+            }
+
+            current_piece.clear_square(file, rank);
+        }
     }
 
     fn remove_checks(&self, moves: &mut Vec::<Move>, turn: &Turn) {
@@ -209,6 +262,100 @@ impl State {
                 }
             }
             current_piece.clear_square(file, rank);
+        }
+    }
+
+    fn get_rook_moves(&self, moves: &mut Vec::<Move>, turn: &Turn) {
+        let mut current_piece = match turn {
+            Turn::White => self.white_rooks,
+            Turn::Black => self.black_rooks,
+        };
+
+        while current_piece != 0 {
+            let file = current_piece.get_file() as isize;
+            let rank = current_piece.get_rank() as isize;
+
+            self.add_range(current_piece, moves, turn, 1, 0);
+            self.add_range(current_piece, moves, turn, -1, 0);
+            self.add_range(current_piece, moves, turn, 0, 1);
+            self.add_range(current_piece, moves, turn, 0, -1);
+
+            current_piece.clear_square(file, rank);
+        }
+    }
+
+    fn get_bishop_moves(&self, moves: &mut Vec::<Move>, turn: &Turn) {
+        let mut current_piece = match turn {
+            Turn::White => self.white_bishops,
+            Turn::Black => self.black_bishops,
+        };
+
+        while current_piece != 0 {
+            let file = current_piece.get_file() as isize;
+            let rank = current_piece.get_rank() as isize;
+
+            self.add_range(current_piece, moves, turn, 1, 1);
+            self.add_range(current_piece, moves, turn, 1, -1);
+            self.add_range(current_piece, moves, turn, -1, 1);
+            self.add_range(current_piece, moves, turn, -1, -1);
+
+            current_piece.clear_square(file, rank);
+        }
+    }
+
+    fn get_queen_moves(&self, moves: &mut Vec::<Move>, turn: &Turn) {
+        let mut current_piece = match turn {
+            Turn::White => self.white_queens,
+            Turn::Black => self.black_queens,
+        };
+
+        while current_piece != 0 {
+            let file = current_piece.get_file() as isize;
+            let rank = current_piece.get_rank() as isize;
+
+            self.add_range(current_piece, moves, turn, 1, 0);
+            self.add_range(current_piece, moves, turn, -1, 0);
+            self.add_range(current_piece, moves, turn, 0, 1);
+            self.add_range(current_piece, moves, turn, 0, -1);
+            self.add_range(current_piece, moves, turn, 1, 1);
+            self.add_range(current_piece, moves, turn, 1, -1);
+            self.add_range(current_piece, moves, turn, -1, 1);
+            self.add_range(current_piece, moves, turn, -1, -1);
+
+            current_piece.clear_square(file, rank);
+        }
+    }
+
+    fn add_range(&self, piece: u64, moves: &mut Vec::<Move>, turn: &Turn,
+                 file_direction: isize, rank_direction: isize) {
+        let mut current_move = Move { from: 0, to: 0 };
+        let opposite_pieces = match turn {
+            Turn::White => self.black_pieces,
+            Turn::Black => self.white_pieces,
+        };
+        let my_pieces = match turn {
+            Turn::White => self.white_pieces,
+            Turn::Black => self.black_pieces,
+        };
+        let file = piece.get_file() as isize;
+        let rank = piece.get_rank() as isize;
+
+        current_move.from.set_square(file, rank);
+        for i in 1..8 {
+            if my_pieces.valid_destination(file + i * file_direction,
+                                           rank + i * rank_direction) {
+                   current_move.to.set_square(file + i*file_direction,
+                                              rank + i*rank_direction);
+                   moves.push(current_move);
+            } else {
+                break;
+            }
+
+            // piece can't go through opposing pieces and must stop at first capture
+            if !opposite_pieces.valid_destination(file + i * file_direction,
+                                                  rank + i * rank_direction) {
+                break;
+            }
         }
     }
 
