@@ -4,7 +4,9 @@ use std::thread;
 use std::time::Duration;
 use std::sync::mpsc;
 use chess::bitboard;
-use chess::engine;
+use chess::engine::State;
+use chess::engine::move_from_str;
+use chess::engine::Turn;
 
 fn main() {
     // I had no idea what these where supposed to be named:
@@ -25,6 +27,9 @@ fn main() {
         }
     });
 
+    let mut lily = State::new();
+    let mut turn = Turn::White;
+
     loop {
         let message = rx.recv().unwrap();
         let tokens: Vec<&str> = message.split_whitespace().collect();
@@ -32,10 +37,21 @@ fn main() {
         match tokens[0] {
             "quit" => { break; }
             "full_reset" => {},
-            "board_reset" => {},
-            "move" => {},
+            "board_reset" => {
+                lily.reset_board();
+                turn = Turn::White;
+            },
+            "move" => {
+                assert!(tokens.len() > 1);
+                let from_gui = move_from_str(tokens[1]);
+                lily.play_move(from_gui.from, from_gui.to);
+                turn = match turn {
+                    Turn::White => Turn::Black,
+                    Turn::Black => Turn::White,
+                };
+            },
             "think" => {
-                let best_move = engine::get_move();
+                let best_move = lily.get_move(&turn);
                 ty.send(format!("submit {}", bitboard::to_move(best_move.from,
                                                                best_move.to)))
                   .unwrap();
