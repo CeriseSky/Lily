@@ -1,6 +1,6 @@
 use crate::bitboard::{Manipulations,Scans};
 
-#[derive(Default)]
+#[derive(Default,Clone)]
 pub struct State {
     white_pieces: u64,
     white_knights: u64,
@@ -19,7 +19,7 @@ pub struct State {
     black_king: u64,
 }
 
-#[derive(Copy,Clone)]
+#[derive(Copy,Clone,Debug)]
 pub struct Move {
     pub from: u64,
     pub to: u64
@@ -56,35 +56,38 @@ impl State {
 
     pub fn reset_board(&mut self) {
         // I'm sorry.
+        // I did actually fall for this so I'll explain here that the bits are
+        // actually mirrored from what they would be on the board, which is
+        // why the queen has a less sigificant bit than the king
 
         self.white_pieces = 0xffff;
         self.white_knights = 0x42;
         self.white_rooks = 0x81;
         self.white_bishops = 0x24;
-        self.white_queens = 0x10;
+        self.white_queens = 0x8;
         self.white_pawns = 0xff00;
-        self.white_king = 0x8;
+        self.white_king = 0x10;
 
         self.black_pieces = 0xffff_0000_0000_0000;
         self.black_knights = 0x4200_0000_0000_0000;
         self.black_rooks = 0x8100_0000_0000_0000;
         self.black_bishops = 0x2400_0000_0000_0000;
-        self.black_queens = 0x1000_0000_0000_0000;
+        self.black_queens = 0x0800_0000_0000_0000;
         self.black_pawns = 0x00ff_0000_0000_0000;
-        self.black_king = 0x0800_0000_0000_0000;
+        self.black_king = 0x1000_0000_0000_0000;
     }
 
     // returns (from, to) as bitboards
     pub fn get_move(&self, turn: &Turn) -> Move {
-        self.choose_move(&self.get_legal_moves(turn), turn)
+        self.choose_move(&self.get_legal_moves(turn, true), turn,)
     }
 
-    fn get_legal_moves(&self, turn: &Turn) -> Vec::<Move> {
+    fn get_legal_moves(&self, turn: &Turn, checks: bool) -> Vec::<Move> {
         let mut moves: Vec::<Move> = vec![];
 
         self.get_knight_moves(&mut moves, turn);
+        self.get_king_moves(&mut moves, turn);
         // Todo:
-        // self.get_king_moves(&mut moves, turn);
         // self.get_rook_moves(&mut moves, turn);
         // self.get_bishop_moves(&mut moves, turn);
         // self.get_queen_moves(&mut moves, turn);
@@ -93,7 +96,72 @@ impl State {
         // the C++ version did have partial pawn support but En Passant and
         // promotion sound complicated to implement
 
+        if checks {
+            self.remove_checks(&mut moves, turn);
+        }
         moves
+    }
+
+    fn remove_checks(&self, moves: &mut Vec::<Move>, turn: &Turn) {
+        // I'm not sure of any other way to do this, it checks if any of the
+        // opponent's legal moves on the next turn can capture the king
+        //
+        // Honestly to change this a whole rework of the move system needs to be
+        // made where the moves are represented as bitboards containing all
+        // valid moves for a given piece
+
+        moves.retain(|i| {
+            let mut takes_king = false;
+            let mut clone = self.clone();
+            clone.play_move(i.from, i.to, turn);
+
+            let target_king = match turn {
+                Turn::White => clone.white_king,
+                Turn::Black => clone.black_king,
+            };
+
+            let next_turn = match turn {
+                Turn::White => Turn::Black,
+                Turn::Black => Turn::White,
+            };
+            let next_moves: Vec::<Move> = clone.get_legal_moves(&next_turn, false);
+
+            for j in &next_moves {
+                if j.to & target_king != 0 {
+                    takes_king = true;
+                    break;
+                }
+            }
+
+            !takes_king
+        });
+
+    }
+
+    fn get_king_moves(&self, moves: &mut Vec::<Move>, turn: &Turn) {
+        let king = match turn {
+            Turn::White => self.white_king,
+            Turn::Black => self.black_king
+        };
+
+        let file = king.get_file() as isize;
+        let rank = king.get_rank() as isize;
+
+        for i in -1..=1 {
+            for j in -1..=1 {
+                if (*turn == Turn::White &&
+                        self.white_pieces.valid_destination(file + i,
+                                                            rank + j)) ||
+                   (*turn == Turn::Black &&
+                        self.black_pieces.valid_destination(file + i,
+                                                            rank + j)) {
+                       let mut current_move = Move { from: 0, to: 0 };
+                       current_move.from.set_square(file, rank);
+                       current_move.to.set_square(file + i, rank + j);
+                       moves.push(current_move);
+                }
+            }
+        }
     }
 
     fn get_knight_moves(&self, moves: &mut Vec::<Move>, turn: &Turn) {
