@@ -20,20 +20,17 @@ pub struct Interface {
     running: bool,
     ready: bool,
     sender: mpsc::Sender::<String>,
-    receiver: mpsc::Receiver::<String>
 }
 
 impl Interface {
     pub fn new(name: &str, author: &str,
-               sender: mpsc::Sender::<String>,
-               receiver: mpsc::Receiver::<String>) -> Self {
+               sender: mpsc::Sender::<String>) -> Self {
         Self {
             name: name.to_string(),
             author: author.to_string(),
             running: true,
             ready: true,
             sender,
-            receiver
         }
     }
 
@@ -59,19 +56,6 @@ impl Interface {
 
     pub fn send_signal(&self, message: String) {
         self.sender.send(message).unwrap();
-    }
-
-    pub fn poll(&self){
-       if let Ok(message) = self.receiver.try_recv() {
-           let tokens: Vec<&str> = message.split_whitespace().collect();
-           match tokens[0] {
-               "submit" => {
-                   assert!(tokens.len() > 1);
-                   send_command(&format!("bestmove {}", tokens[1]));
-               }
-               _ => eprintln!("Unhandled interface signal: {message}"),
-           }
-       } 
     }
 }
 

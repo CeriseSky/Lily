@@ -43,7 +43,7 @@ pub fn move_from_str(input: &str) -> Move {
     ret
 }
 
-#[derive(Clone,PartialEq)]
+#[derive(Clone,PartialEq,Debug)]
 pub enum Turn {
     White,
     Black,
@@ -78,7 +78,8 @@ impl State {
     }
 
     pub fn get_move(&self, turn: &Turn) -> Move {
-        self.choose_move(&self.get_legal_moves(turn, true), turn)
+        let (best_move, _) = self.choose_move(&self.get_legal_moves(turn, true), turn, 3);
+        best_move
     }
 
     fn get_legal_moves(&self, turn: &Turn, checks: bool) -> Vec::<Move> {
@@ -344,9 +345,10 @@ impl State {
         for i in 1..8 {
             if my_pieces.valid_destination(file + i * file_direction,
                                            rank + i * rank_direction) {
-                   current_move.to.set_square(file + i*file_direction,
-                                              rank + i*rank_direction);
-                   moves.push(current_move);
+                current_move.to = 0;
+                current_move.to.set_square(file + i*file_direction,
+                                           rank + i*rank_direction);
+                moves.push(current_move);
             } else {
                 break;
             }
@@ -359,9 +361,86 @@ impl State {
         }
     }
 
-    fn choose_move(&self, moves: &[Move], _turn: &Turn) -> Move {
+    fn choose_move(&self, moves: &[Move], turn: &Turn, depth: usize) -> (Move, isize) {
         assert!(!moves.is_empty());
-        moves[0]
+        let mut best_move = moves[0];
+        let mut best_score = match turn {
+            Turn::White => -1000000,
+            Turn::Black => 1000000,
+        };
+        let next_turn = match turn {
+            Turn::White => Turn::Black,
+            Turn::Black => Turn::White,
+        };
+
+        for i in moves {
+            let mut clone = self.clone();
+            clone.play_move(i.from, i.to, turn);
+
+            let score = match depth {
+                0 => self.static_eval(),
+                _ => {
+                    let next_moves = clone.get_legal_moves(&next_turn, true);
+                    let mut score = match turn {
+                        Turn::White => 1000000,
+                        Turn::Black => -1000000,
+                    };
+
+                    // treats checkmate the same as stalemate, fix with is_in_check method
+                    if next_moves.is_empty() {
+                        return (*i, score);
+                    }
+
+                    (_, score) = clone.choose_move(
+                        &next_moves,
+                        &next_turn,
+                        depth - 1);
+
+                    score
+                }
+            };
+
+                if depth == 3 {
+                    println!("info depth {depth} score cp {} pv {}", score * 100, crate::bitboard::to_move(i.from, i.to));
+                }
+
+            if (*turn == Turn::White && score > best_score) ||
+               (*turn == Turn::Black && score < best_score) {
+                best_move = *i;
+                best_score = score;
+            }
+        }
+
+        if depth == 3 {
+            println!("info score cp {}", best_score * 100);
+        }
+        (best_move, best_score)
+    }
+
+    fn piece_score(&self, turn: &Turn) -> usize {
+        match turn {
+            Turn::White => {
+                self.white_pawns.count() +
+                self.white_rooks.count() * 5 +
+                self.white_knights.count() * 3 +
+                self.white_bishops.count() * 3 +
+                self.white_queens.count() * 9 +
+                self.white_king.count() * 1000000
+            },
+            Turn::Black => {
+                self.black_pawns.count() +
+                self.black_rooks.count() * 5 +
+                self.black_knights.count() * 3 +
+                self.black_bishops.count() * 3 +
+                self.black_queens.count() * 9 +
+                self.black_king.count() * 1000000
+            }
+        }
+    }
+
+    fn static_eval(&self) -> isize {
+        self.piece_score(&Turn::White) as isize -
+        self.piece_score(&Turn::Black) as isize
     }
 
     pub fn play_move(&mut self, src: u64, dst: u64, turn: &Turn) {

@@ -4,6 +4,7 @@ pub trait Scans {
     fn get_rank(self) -> usize;
     fn square_occupied(self, file: isize, rank: isize) -> bool;
     fn valid_destination(self, file: isize, rank: isize) -> bool;
+    fn count(self) -> usize;
 }
 
 pub trait Manipulations {
@@ -69,6 +70,16 @@ impl Scans for u64 {
     fn valid_destination(self, file: isize, rank: isize) -> bool {
         square_exists(file, rank) && !self.square_occupied(file, rank)
     }
+
+    fn count(self) -> usize {
+        let mut running = 0;
+        for i in 0..64 {
+            if self & (1 << i) != 0 {
+                running += 1;
+            }
+        }
+        running
+    }
 }
 
 pub fn get_location_bit(file: isize, rank: isize) -> u64 {
@@ -84,6 +95,7 @@ pub fn to_move(src: u64, dst: u64) -> String {
     // bad?
     let files: Vec<char> = vec!['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
     let ranks: Vec<char> = vec!['1', '2', '3', '4', '5', '6', '7', '8'];
+
     let chars: Vec<char> = vec![ files[src.get_file()],
                                  ranks[src.get_rank()],
                                  files[dst.get_file()],

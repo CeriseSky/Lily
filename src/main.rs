@@ -9,19 +9,14 @@ use chess::engine::move_from_str;
 use chess::engine::Turn;
 
 fn main() {
-    // I had no idea what these where supposed to be named:
-    // tx, rx: goes from the GUI interface to the Engine
-    // ty, ry: goes from the Engine to the GUI interface
     let (tx, rx) = mpsc::channel::<String>();
-    let (ty, ry) = mpsc::channel::<String>();
 
     // UCI must always be able to handle messages so it will run on a separate
     // thread from the engine. Limited to a bandwidth of 200 commands a second
     // which should be enough to not timeout any GUI out there
     thread::spawn(move || {
-        let mut state = uci::Interface::new("Lily", "CeriseSky", tx, ry);
+        let mut state = uci::Interface::new("Lily", "CeriseSky", tx);
         while state.is_running() {
-            state.poll();
             uci::get_command().handle(&mut state);
             thread::sleep(Duration::from_millis(50));
         }
@@ -52,9 +47,9 @@ fn main() {
             },
             "think" => {
                 let best_move = lily.get_move(&turn);
-                ty.send(format!("submit {}", bitboard::to_move(best_move.from,
-                                                               best_move.to)))
-                  .unwrap();
+                let command = format!("bestmove {}", bitboard::to_move(best_move.from,
+                                                                       best_move.to));
+                uci::send_command(command.as_str());
             }
             _ => {
                 println!("Unhandled signal: {message}");
