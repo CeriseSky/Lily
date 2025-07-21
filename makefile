@@ -1,4 +1,5 @@
 APP_NAME=lily
+COMMIT_HASH=$(shell git rev-parse HEAD | head -c 8)
 
 SRC=src
 INCLUDE=include
@@ -10,7 +11,8 @@ OUTPUT_DIRS=$(PREFIX) \
             $(PREFIX)/bin
 
 CC=gcc
-CFLAGS=-Wall -Werror -Wpedantic -std=c23 -I$(INCLUDE) -g -O3
+CFLAGS=-Wall -Werror -Wpedantic -std=c23 -I$(INCLUDE) -g -O3 \
+       -DCOMMIT_HASH=\"$(COMMIT_HASH)\"
 
 LD=gcc
 LDFLAGS=
