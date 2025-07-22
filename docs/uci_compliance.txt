@@ -6,34 +6,34 @@ Legend
 
 General
 [*] - OS Independent
-[ ] - Communicates on stdin and stdout
-[ ] - Waits for input from GUI to do anything
-[ ] - Can process input at all times
-[ ] - Arbitrary whitespace is supported
+[*] - Communicates on stdin and stdout
+[*] - Waits for input from GUI to do anything
+[*] - Can process input at all times
+[*] - Arbitrary whitespace is supported
 [ ] - Ignores unknown tokens
 [ ] - Ignores impossible commands (e.g. "stop" when not thinking)
 
 GUI -> Engine
-[ ] - uci
+[*] - uci
 [ ] - debug
-[ ] - isready
+[*] - isready
 [ ] - setoption
-[ ] - register
+[\] - register
 [ ] - ucinewgame
 [ ] - position
-[ ] - go
+[*] - go
 [ ] - ponder
 [ ] - stop
 [ ] - ponderhit
-[ ] - quit
+[*] - quit
 
 Engine -> GUI
-[ ] - id
-[ ] - uciok
-[ ] - readyok
-[ ] - bestmove
-[ ] - copyprotection
-[ ] - registration
+[*] - id
+[*] - uciok
+[*] - readyok
+[*] - bestmove
+[\] - copyprotection
+[\] - registration
 [ ] - info
 [ ] - option
 

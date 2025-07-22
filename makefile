@@ -1,23 +1,25 @@
-APP_NAME=lily
-COMMIT_HASH=$(shell git rev-parse HEAD | head -c 8)
+APP_NAME:=lily
+COMMIT_HASH:=$(shell git rev-parse HEAD | head -c 8)
 
-SRC=src
-INCLUDE=include
+SRC:=src
+INCLUDE:=include
 
-PREFIX=$(shell pwd)/install
-TMP=tmp
-OUTPUT_DIRS=$(PREFIX) \
-            $(TMP) \
-            $(PREFIX)/bin
+PREFIX:=$(shell pwd)/install
+TMP:=tmp
+OUTPUT_DIRS:=$(PREFIX) \
+             $(TMP) \
+             $(PREFIX)/bin
 
-CC=gcc
-CFLAGS=-Wall -Werror -Wpedantic -std=c23 -I$(INCLUDE) -g -O3 \
-       -DCOMMIT_HASH=\"$(COMMIT_HASH)\"
+CC:=gcc
+CFLAGS:=-Wall -Werror -Wpedantic -std=gnu23 -I$(INCLUDE) -g -O3 \
+        -DCOMMIT_HASH=\"$(COMMIT_HASH)\" -MMD -MP
 
-LD=gcc
-LDFLAGS=
+LD:=gcc
+LDFLAGS:=
 
-OBJS=$(patsubst $(SRC)/%.c,$(TMP)/%.o,$(wildcard $(SRC)/*.c))
+SOURCES:=$(wildcard $(SRC)/*.c)
+OBJS:=$(patsubst $(SRC)/%.c,$(TMP)/%.o,$(SOURCES))
+DEPENDS:=$(patsubst $(SRC)/%.c,$(TMP)/%.d,$(SOURCES))
 
 .PHONEY: all dirs clean
 
@@ -34,6 +36,8 @@ $(OUTPUT_DIRS):
 $(PREFIX)/bin/$(APP_NAME): $(OBJS)
 	$(LD) $(LDFLAGS) $(OBJS) -o $@
 
-$(OBJS): $(TMP)/%.o: $(SRC)/%.c
+-include $(DEPENDS)
+
+$(OBJS): $(TMP)/%.o: $(SRC)/%.c makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 

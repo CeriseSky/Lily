@@ -1,3 +1,7 @@
 engine-interface.txt
 install/
 tmp/
+.cache/
+install/
+tmp/
+compile_commands.json
