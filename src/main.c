@@ -29,6 +29,8 @@ int main() {
       return EXIT_FAILURE;
     }
 
+    // This speed tracker will get removed when lily starts sending it's own
+    // info to the gui like nps and overall time taken
     clock_t start = clock(), elapsed;
 
     vec_charptr tokens;
