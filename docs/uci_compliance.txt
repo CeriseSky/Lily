@@ -11,7 +11,8 @@ General
 [*] - Can process input at all times
 [*] - Arbitrary whitespace is supported
 [ ] - Ignores unknown tokens
-[ ] - Ignores impossible commands (e.g. "stop" when not thinking)
+[*] - Ingores unknows commands
+[*] - Ignores impossible commands (e.g. "stop" when not thinking)
 
 GUI -> Engine
 [*] - uci
@@ -23,7 +24,7 @@ GUI -> Engine
 [ ] - position
 [*] - go
 [ ] - ponder
-[ ] - stop
+[*] - stop
 [ ] - ponderhit
 [*] - quit
 
@@ -54,4 +55,3 @@ Options
 [ ] - UCI_ShredderbasesPath
 [ ] - UCI_SetPositionValue
 [ ] - UCI_Chess960
-
