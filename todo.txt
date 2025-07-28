@@ -1,7 +1,0 @@
-run the memory manager through gdb and fix it
-move generation for pawns
-king
-move generation for bishops
-queens
-rooks
-
