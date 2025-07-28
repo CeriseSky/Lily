@@ -17,7 +17,9 @@ typedef struct {
 } UCI_State;
 
 void UCI_init();
-void UCI_send(vec_charptr *tokens);
+
+// newline is not needed at the end of fmt
+void UCI_send(char *fmt, ...);
 
 extern UCI_State UCI_state;
 extern UCI_Command UCI_commands[];

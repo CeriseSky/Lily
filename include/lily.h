@@ -16,6 +16,18 @@ typedef struct {
   pthread_mutex_t thinkingLock;
 } lily_ThinkThreadArgs;
 
+typedef void (*lily_PfnDestructor)(void *);
+typedef struct lily_Allocation {
+  void *memory;
+  lily_PfnDestructor destructor;
+  struct lily_Allocation *next;   // a hash map would be better for this than a
+                                  // linked list, but that's for the future
+} lily_Allocation;
+
+void *lily_alloc(size_t size, lily_PfnDestructor destructor);
+void lily_freeAll();
+void lily_free(void *);
+
 void lily_think();
 void lily_sendMove(char bestMove[UCI_MAX_MOVE_LENGTH]);
 

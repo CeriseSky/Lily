@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <lily.h>
 #include <pthread.h>
+#include <stdarg.h>
 
 UCI_State UCI_state = { 0 };
 
@@ -9,10 +10,11 @@ void UCI_init() {
   UCI_state.running = true;
 }
 
-void UCI_send(vec_charptr *tokens) {
-  for(size_t i = 0; i < tokens->len; i++)
-    printf("%s ", tokens->storage[i]);
-  printf("\n");
+void UCI_send(char *fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  vprintf(fmt, args);
+  putchar('\n');
   fflush(stdout);
 }
 
@@ -52,6 +54,8 @@ static void UCI_go(vec_charptr *args) {
 
     pthread_mutex_unlock(&state.thinkingLock);
   }
+
+  pthread_mutex_destroy(&state.thinkingLock);
 }
 
 void UCI_stop(vec_charptr *args) {

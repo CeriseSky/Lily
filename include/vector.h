@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 // Did I need to implement vectors from scratch in C? No...
 // Did I do it anyway? Yes!

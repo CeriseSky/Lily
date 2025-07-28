@@ -29,10 +29,6 @@ int main() {
       return EXIT_FAILURE;
     }
 
-    // This speed tracker will get removed when lily starts sending it's own
-    // info to the gui like nps and overall time taken
-    clock_t start = clock(), elapsed;
-
     vec_charptr tokens;
     vec_charptr_new(&tokens);
 
@@ -45,9 +41,6 @@ int main() {
         vec_charptr_delete(&tokens);
         return EXIT_FAILURE;
       }
-
-    elapsed = clock() - start;
-    double time = (double)elapsed / (double)CLOCKS_PER_SEC;
 
     bool handled = false;
     if(tokens.len != 0) {
@@ -63,10 +56,6 @@ int main() {
 
     vec_charptr_delete(&tokens);
     free(command);
-
-    elapsed = clock() - start;
-    time = (double)elapsed / (double)CLOCKS_PER_SEC;
-    fprintf(stderr, LOG_INFO "Command handled in %.2fms\n", time * 1'000.0);
   }
 
   return EXIT_SUCCESS;
