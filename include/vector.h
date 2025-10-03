@@ -44,6 +44,7 @@
     size_t len; \
     size_t cap; \
     T *storage; \
+    size_t reallocs; \
   } vec_##T; \
   \
   /* new is the "constructor" of the vector.
@@ -69,12 +70,15 @@
     self->len = 0; \
     self->cap = 0; \
     self->storage = nullptr; \
+    self->reallocs = 0; \
   } \
   \
   VEC_API long vec_##T##_push(vec_##T *self, T *val) { \
-    if(self->cap < ++self->len) \
-      if(vec_##T##_reserve(self, self->cap > 0 ? self->cap * 3 / 2 : 16) < 0) \
+    if(self->cap < ++self->len) {\
+      if(vec_##T##_reserve(self, self->cap > 0 ? self->cap * 3/2 : 16) < 0) \
         return -1; \
+      self->reallocs++; \
+    }\
     memcpy(&self->storage[self->len - 1], val, sizeof(T)); \
     return self->len; \
   } \

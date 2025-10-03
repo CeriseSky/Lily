@@ -21,6 +21,7 @@ typedef bool movegen_Turn;
 // assume the moves vector is corrupted and delete it
 bool movegen_getAll(movegen_Turn, bitboard_Board *, vec_movegen_Move *);
 bool movegen_getKnights(movegen_Turn, bitboard_Board *, vec_movegen_Move *);
+bool movegen_getPawns(movegen_Turn, bitboard_Board *, vec_movegen_Move *);
 
 #endif
 
