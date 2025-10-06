@@ -21,7 +21,7 @@ GUI -> Engine
 [ ] - setoption
 [\] - register
 [ ] - ucinewgame
-[ ] - position
+[/] - position
 [*] - go
 [ ] - ponder
 [*] - stop
