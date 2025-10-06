@@ -3,6 +3,8 @@
 
 #include <uci.h>
 #include <pthread.h>
+#include <bitboard.h>
+#include <movegen.h>
 
 typedef enum {
   LILY_NO_STATUS = 0,
@@ -14,12 +16,15 @@ typedef enum {
 typedef struct {
   lily_ThinkingState thinking;
   pthread_mutex_t thinkingLock;
+  bitboard_Board *board;
+  movegen_Turn turn;
 } lily_ThinkThreadArgs;
 
 typedef void (*lily_PfnDestructor)(void *);
 typedef struct lily_Allocation {
   void *memory;
-  lily_PfnDestructor destructor;
+  lily_PfnDestructor destructor;  // must NOT destroy the object, only memory
+                                  // that it owns
   struct lily_Allocation *next;   // a hash map would be better for this than a
                                   // linked list, but that's for the future
 } lily_Allocation;

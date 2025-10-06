@@ -1,5 +1,4 @@
 #include <lily.h>
-#include <movegen.h>
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
@@ -7,6 +6,10 @@
 struct {
   bool thinking;
   char *currentBestMove;
+
+  bitboard_Board board;
+  movegen_Turn turn;
+
   pthread_t thinkerThread;
   lily_Allocation *allocations;
   pthread_mutex_t allocationLock;
@@ -34,6 +37,9 @@ void *lily_think_thread(void *arg) {
   options->thinking = LILY_THINKING;
   pthread_mutex_unlock(&options->thinkingLock);
 
+  memcpy(&lily_state.board, options->board, sizeof(lily_state.board));
+  lily_state.turn = options->turn;
+
   lily_state.allocations = nullptr;
   lily_state.thinking = true;
   lily_think();
@@ -42,6 +48,7 @@ void *lily_think_thread(void *arg) {
   return nullptr;
 }
 
+/*
 static size_t lily_enumerateMoves(movegen_Turn turn, 
                                   bitboard_Board *board, size_t depth) {
   if(!depth) return 0;
@@ -81,23 +88,47 @@ static size_t lily_enumerateMoves(movegen_Turn turn,
   lily_free(moves);
   return count;
 }
+*/
 
 void lily_think() {
-  lily_state.currentBestMove = malloc(UCI_MAX_MOVE_LENGTH + 1);
+  lily_state.currentBestMove = lily_alloc(UCI_MAX_MOVE_LENGTH + 1, nullptr);
   strcpy(lily_state.currentBestMove, "0000");
 
+  /*
   bitboard_Board board;
   bitboard_Board_reset(&board);
-  constexpr size_t maxDepth = 100;
+  constexpr size_t maxDepth = 5;
   for(int i = 0; i < maxDepth; i++) {
     clock_t start = clock();
     size_t numMoves = lily_enumerateMoves(MOVEGEN_TURN_WHITE, &board, i);
     double time = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
 
-    // UCI_send doesn't support va_lists yet
     UCI_send("info depth %i time %lu nps %lu nodes %lu", i, (uint64_t)(1000.0 * time),
              (uint64_t)(numMoves / time), numMoves);
   }
+  */
+
+  vec_movegen_Move *moves = lily_alloc(
+      sizeof(vec_movegen_Move),
+      (lily_PfnDestructor)vec_movegen_Move_delete);
+  if(!moves)
+    return;
+  vec_movegen_Move_new(moves);
+
+  if(!movegen_getAll(lily_state.turn, &lily_state.board, moves))
+    return;
+
+  if(!moves->len)
+    return;
+
+  uint64_t chosenDestination =
+    bitboard_getMostSignificantMask(moves->storage[0].destinations);
+  lily_state.currentBestMove[0] =
+    'a' + bitboard_getFile(moves->storage[0].source);
+  lily_state.currentBestMove[1] =
+    '1' + bitboard_getRank(moves->storage[0].source);
+  lily_state.currentBestMove[2] = 'a' + bitboard_getFile(chosenDestination);
+  lily_state.currentBestMove[3] = '1' + bitboard_getRank(chosenDestination);
 }
 
 void lily_stop() {
@@ -110,15 +141,16 @@ void lily_stop() {
     pthread_cancel(lily_state.thinkerThread);
 
   lily_state.thinking = false;
-  lily_sendMove(lily_state.currentBestMove);
-
-  free(lily_state.currentBestMove);
-  pthread_mutex_destroy(&lily_state.allocationLock);
+  if(lily_state.currentBestMove)
+    lily_sendMove(lily_state.currentBestMove);
+  else
+    lily_sendMove("0000");
 
   lily_freeAll();
+  pthread_mutex_destroy(&lily_state.allocationLock);
 }
 
-void lily_sendMove(char bestmove[UCI_MAX_MOVE_LENGTH]) {
+inline void lily_sendMove(char bestmove[UCI_MAX_MOVE_LENGTH]) {
   UCI_send("bestmove %s", bestmove);
 }
 
@@ -127,7 +159,6 @@ void lily_freeAll() {
   pthread_mutex_lock(&lily_state.allocationLock);
   while(lily_state.allocations)
     lily_free(lily_state.allocations->memory);
-  lily_state.allocations = nullptr;
   pthread_mutex_unlock(&lily_state.allocationLock);
 }
 

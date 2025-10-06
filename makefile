@@ -11,8 +11,11 @@ OUTPUT_DIRS:=$(PREFIX) \
              $(PREFIX)/bin
 
 CC:=gcc
-CFLAGS:=-Wall -Werror -Wpedantic -std=gnu23 -I$(INCLUDE) -g -O3 \
-        -DCOMMIT_HASH=\"$(COMMIT_HASH)\" -MMD -MP
+DEF_CFLAGS:=-Wall -Werror -Wpedantic -std=gnu23 -I$(INCLUDE) \
+            -DCOMMIT_HASH=\"$(COMMIT_HASH)\" -MMD -MP
+REL_CFLAGS:=$(DEF_CFLAGS) -O3
+DBG_CFLAGS:=$(DEF_CFLAGS) -O0 -g
+CFLAGS:=$(DBG_CFLAGS)
 
 LD:=gcc
 LDFLAGS:=

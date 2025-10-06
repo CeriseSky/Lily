@@ -3,6 +3,8 @@
 
 #include <vector.h>
 #include <pthread.h>
+#include <bitboard.h>
+#include <movegen.h>
 
 #define UCI_MAX_MOVE_LENGTH 5 // longest move is promotion (e.g. e7e8q)
 
@@ -14,6 +16,8 @@ typedef struct {
 typedef struct {
   bool running;
   pthread_t thinker;
+  bitboard_Board board;
+  movegen_Turn turn;
 } UCI_State;
 
 void UCI_init();
