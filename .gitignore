@@ -5,5 +5,4 @@ tmp/
 install/
 tmp/
 compile_commands.json
-todo.txt
 tests/bin

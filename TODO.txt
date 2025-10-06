@@ -1,0 +1,55 @@
+===POSITION & BITBOARDS===
+capturing
+castling
+en passant
+track 3 move repetition & 50 move rule
+
+===MOVEGEN===
+piece capturing
+move string to lily move
+lily move to move string
+move generation for pawns
+king
+move generation for bishops
+queens
+rooks
+promotion
+check removal
+en passant
+castling
+50 move rule
+3 move repetition
+stalemate
+checkmate
+
+===SEARCH===
+alpha beta pruning
+transposition table
+aspiration windows
+quiescence search
+other selectivity
+mate search
+move ordering
+
+===GENERAL===
+time management
+move string to lily move
+lily move to move string
+
+===EVALUATION===
+remember to keep it light but do consider a lot of things
+material advantage
+piece square table
+pawn structure
+evaluation of pieces
+evaluation patterns
+mobility
+center control
+connectivity
+trapped pieces
+king safety
+space
+tempo
+game phases
+piece relative value
+
